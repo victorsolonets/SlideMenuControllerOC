@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		69AD00AE1ED3196300C71AB1 /* BottomViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 69AD00AD1ED3196300C71AB1 /* BottomViewController.m */; };
 		6C068A911CB743C50019EC8B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6C068A901CB743C50019EC8B /* LaunchScreen.storyboard */; };
 		6C5A0AF91CB744F4008F7948 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6C5A0AF81CB744F4008F7948 /* Main.storyboard */; };
 		6C5A0AFB1CB745D1008F7948 /* ImageHeaderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 6C5A0AFA1CB745D1008F7948 /* ImageHeaderView.xib */; };
@@ -39,6 +40,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		69AD00AC1ED3196300C71AB1 /* BottomViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BottomViewController.h; sourceTree = "<group>"; };
+		69AD00AD1ED3196300C71AB1 /* BottomViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BottomViewController.m; sourceTree = "<group>"; };
 		6C068A901CB743C50019EC8B /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		6C5A0AF81CB744F4008F7948 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		6C5A0AFA1CB745D1008F7948 /* ImageHeaderView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ImageHeaderView.xib; path = View/ImageHeaderView.xib; sourceTree = "<group>"; };
@@ -198,6 +201,8 @@
 				6C99A8EF1C836DB500135ADD /* NonMenuController.m */,
 				6C99A8F01C836DB500135ADD /* RightViewController.h */,
 				6C99A8F11C836DB500135ADD /* RightViewController.m */,
+				69AD00AC1ED3196300C71AB1 /* BottomViewController.h */,
+				69AD00AD1ED3196300C71AB1 /* BottomViewController.m */,
 				6C99A8F21C836DB500135ADD /* SubContentsViewController.h */,
 				6C99A8F31C836DB500135ADD /* SubContentsViewController.m */,
 				6C5A0AFE1CB75324008F7948 /* SubContentsViewController.storyboard */,
@@ -316,6 +321,7 @@
 				6C99A8FB1C836DB500135ADD /* JavaViewController.m in Sources */,
 				6C99A8FE1C836DB500135ADD /* NonMenuController.m in Sources */,
 				6CFEDBCA1CA9923200D01344 /* BaseTableViewCell.m in Sources */,
+				69AD00AE1ED3196300C71AB1 /* BottomViewController.m in Sources */,
 				6CFEDBCD1CA99A2E00D01344 /* ImageHeaderView.m in Sources */,
 				6C99A8F81C836DB500135ADD /* UITableView+SlideMenuControllerOC.m in Sources */,
 				6C99A9001C836DB500135ADD /* SubContentsViewController.m in Sources */,

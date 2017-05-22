@@ -90,4 +90,21 @@
     NSLog(@"SlideMenuControllerDelegate: rightDidClose");
 }
 
+-(void)bottomWillOpen {
+    NSLog(@"SlideMenuControllerDelegate: bottomWillOpen");
+}
+
+-(void)bottomDidOpen {
+    NSLog(@"SlideMenuControllerDelegate: bottomDidOpen");
+}
+
+-(void)bottomWillClose {
+    NSLog(@"SlideMenuControllerDelegate: bottomWillClose");
+}
+
+-(void)bottomDidClose {
+    NSLog(@"SlideMenuControllerDelegate: bottomDidClose");
+}
+
+
 @end

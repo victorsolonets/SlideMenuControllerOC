@@ -10,6 +10,7 @@
 #import "MainViewController.h"
 #import "LeftViewController.h"
 #import "RightViewController.h"
+#import "BottomViewController.h"
 #import "ExSlideMenuController.h"
 
 @interface AppDelegate ()
@@ -23,12 +24,13 @@
     MainViewController *mainViewController = (MainViewController *)[storyboard instantiateViewControllerWithIdentifier:@"MainViewController"];
     LeftViewController *leftViewController = (LeftViewController *)[storyboard instantiateViewControllerWithIdentifier:@"LeftViewController"];
     RightViewController *rightViewController = (RightViewController *)[storyboard instantiateViewControllerWithIdentifier:@"RightViewController"];
+    BottomViewController *bottomViewController = (BottomViewController *)[storyboard instantiateViewControllerWithIdentifier:@"BottomViewController"];
     UINavigationController *nvc = [[UINavigationController alloc] initWithRootViewController:mainViewController];
     [UINavigationBar appearance].tintColor = [UIColor colorFromHexString:@"689F38"];
     
     leftViewController.mainViewControler = nvc;
     
-    ExSlideMenuController *slideMenuController = [[ExSlideMenuController alloc] initWithMainViewController:nvc leftMenuViewController:leftViewController rightMenuViewController:rightViewController];
+    ExSlideMenuController *slideMenuController = [[ExSlideMenuController alloc] initWithMainViewController:nvc leftMenuViewController:leftViewController rightMenuViewController:rightViewController bottomMenuViewController:bottomViewController];
     slideMenuController.automaticallyAdjustsScrollViewInsets = YES;
     slideMenuController.delegate = mainViewController;
     self.window.backgroundColor = [UIColor colorWithRed:236.0 green:238.0 blue:241.0 alpha:1.0];

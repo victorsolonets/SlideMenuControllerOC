@@ -35,8 +35,13 @@ struct PanInfo {
         _panFromBezel = YES;
         _animationDuration = .4;
         _rightViewWidth = 270;
-        _rightBezelWidth = 16.0;
+        _rightBezelWidth = 20.0f;
         _rightPanFromBezel = YES;
+        _bottomPanFromBezel = YES;
+        _bottomViewWidth = 270.f;
+        _bottomBezelWidth = 200.f;
+        _contentViewScale = 0.96f;
+        _contentViewOpacity = 0.5f;
         _hideStatusBar = YES;
         _pointOfNoReturnWidth = 44;
         _simultaneousGestureRecognizers = YES;
@@ -55,12 +60,19 @@ static CGRect LPSFrameAtStartOfPan = {0,0,0,0};
 static CGPoint LPSStartPointOfPan = {0,0};
 static BOOL LPSWasOpenAtStartOfPan = NO;
 static BOOL LPSWasHiddenAtStartOfPan = NO;
-static CGRect RPSFrameAtStartOfPan = {0,0,0,0};
 static UIGestureRecognizerState LPSLastState = UIGestureRecognizerStateEnded;
+
 static CGPoint RPSStartPointOfPan = {0,0};
+static CGRect RPSFrameAtStartOfPan = {0,0,0,0};
 static BOOL RPSWasOpenAtStartOfPan = NO;
 static BOOL RPSWasHiddenAtStartOfPan = NO;
 static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
+
+static CGRect BPSFrameAtStartOfPan = {0,0,0,0};
+static CGPoint BPSStartPointOfPan = {0,0};
+static BOOL BPSWasOpenAtStartOfPan = NO;
+static BOOL BPSWasHiddenAtStartOfPan = NO;
+static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 
 @interface SlideMenuController () {
     SlideMenuOption *options;
@@ -99,6 +111,16 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     return self;
 }
 
+- (instancetype)initWithMainViewController:(UIViewController *)tMainController bottomMenuViewController:(UIViewController *)tBottomMenuController {
+    self = [self init];
+    if (self) {
+        _mainViewController = tMainController;
+        _bottomViewController = tBottomMenuController;
+        [self initView];
+    }
+    return self;
+}
+
 - (instancetype)initWithMainViewController:(UIViewController *)tMainController rightMenuViewController:(UIViewController *)tRightMenuController {
     self = [self init];
     if (self) {
@@ -115,6 +137,18 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
         _mainViewController = tMainController;
         _leftViewController = tLeftMenuController;
         _rightViewController = tRightMenuController;
+        [self initView];
+    }
+    return self;
+}
+
+- (instancetype)initWithMainViewController:(UIViewController *)tMainController leftMenuViewController:(UIViewController *)tLeftMenuController rightMenuViewController:(UIViewController *)tRightMenuController bottomMenuViewController:(UIViewController *)tBottomMenuController {
+    self = [self init];
+    if (self) {
+        _mainViewController = tMainController;
+        _leftViewController = tLeftMenuController;
+        _rightViewController = tRightMenuController;
+        _bottomViewController = tBottomMenuController;
         [self initView];
     }
     return self;
@@ -163,6 +197,15 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     _rightContainerView.autoresizingMask = UIViewAutoresizingFlexibleHeight ;
     [self.view insertSubview:_rightContainerView atIndex:3];
     
+    CGRect bottomFrame = self.view.bounds;
+    bottomFrame.origin.y = 3*CGRectGetHeight(self.view.bounds)/4;
+    bottomFrame.origin.x = 0.f;
+    _bottomContainerView = [[UIView alloc] initWithFrame:bottomFrame];
+    _bottomContainerView.backgroundColor = [UIColor clearColor];
+    _bottomContainerView.autoresizingMask = UIViewAutoresizingFlexibleWidth ;
+    [self.view insertSubview:_bottomContainerView atIndex:4];
+    
+    [self addBottomGestures];
     [self addLeftGestures];
     [self addRightGestures];
 }
@@ -234,6 +277,7 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     [self setUpViewController:_mainContainerView targetViewController:_mainViewController];
     [self setUpViewController:_leftContainerView targetViewController:_leftViewController];
     [self setUpViewController:_rightContainerView targetViewController:_rightViewController];
+    [self setUpViewController:_bottomContainerView targetViewController:_bottomViewController];
 }
 
 - (void)openLeft {
@@ -274,6 +318,24 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     [self track:TrackActionRightTapOpen];
 }
 
+- (void)openBottom {
+    if (_bottomViewController == nil) {
+        return;
+    }
+    
+    if (_delegate != nil && [_delegate respondsToSelector:@selector(bottomWillOpen)]) {
+        [_delegate bottomWillOpen];
+    }
+    
+    [self setOpenWindowLevel];
+    if (_bottomViewController != nil) {
+        [_bottomViewController beginAppearanceTransition:[self isBottomHidden] animated:YES];
+    }
+    [self openBottomWithVelocity:0.0];
+    
+    [self track:TrackActionBottomTapOpen];
+}
+
 - (void)closeLeft {
     if (_leftViewController == nil) {
         return;
@@ -299,6 +361,20 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     
     [_rightViewController beginAppearanceTransition:[self isRightHidden] animated:YES];
     [self closeRightWithVelocity:0.0];
+    [self setCloseWindowLebel];
+}
+
+- (void)closeBottom {
+    if (_bottomViewController == nil) {
+        return;
+    }
+    
+    if (_delegate != nil && [_delegate respondsToSelector:@selector(bottomWillClose)]) {
+        [_delegate bottomWillClose];
+    }
+    
+    [_bottomViewController beginAppearanceTransition:[self isBottomHidden] animated:YES];
+    [self closeBottomWithVelocity:0.0];
     [self setCloseWindowLebel];
 }
 
@@ -334,6 +410,22 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     }
 }
 
+- (void)addBottomGestures {
+    if (_bottomViewController != nil) {
+        if (self.bottomPanGesture == nil) {
+            self.bottomPanGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handleBottomPanGesture:)];
+            self.bottomPanGesture.delegate = self;
+            [self.view addGestureRecognizer:self.bottomPanGesture];
+        }
+        
+        if (self.bottomTapGesture == nil) {
+            self.bottomTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(toggleBottom)];
+            self.bottomTapGesture.delegate = self;
+            [self.view addGestureRecognizer:self.bottomTapGesture];
+        }
+    }
+}
+
 - (void)removeLeftGestures {
     if (self.leftPanGesture != nil) {
         [self.view removeGestureRecognizer:self.leftPanGesture];
@@ -355,6 +447,18 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     if (self.rightTapGesture != nil) {
         [self.view removeGestureRecognizer:self.rightTapGesture];
         self.rightTapGesture = nil;
+    }
+}
+
+- (void)removeBttomGestures {
+    if (self.bottomPanGesture != nil) {
+        [self.view removeGestureRecognizer:self.bottomPanGesture];
+        self.bottomPanGesture = nil;
+    }
+    
+    if (self.bottomTapGesture != nil) {
+        [self.view removeGestureRecognizer:self.bottomTapGesture];
+        self.bottomTapGesture = nil;
     }
 }
 
@@ -525,6 +629,81 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     RPSLastState = panGesture.state;
 }
 
+- (void)handleBottomPanGesture:(UIPanGestureRecognizer *)panGesture {
+    if (![self isTagetViewController]) {
+        return;
+    }
+    
+    switch (panGesture.state) {
+        case UIGestureRecognizerStateBegan: {
+            if (BPSLastState != UIGestureRecognizerStateEnded) {
+                return;
+            }
+            
+            if (_delegate != nil) {
+//                if ([self isLeftHidden] && [self isRightHidden]) {
+                    if ([_delegate respondsToSelector:@selector(bottomWillOpen)]) {
+                        [_delegate bottomWillOpen];
+                    }
+//                } else {
+//                    if ([_delegate respondsToSelector:@selector(bottomWillClose)]) {
+//                        [_delegate bottomWillClose];
+//                    }
+//                }
+            }
+            
+            BPSFrameAtStartOfPan = _bottomContainerView.frame;
+            BPSStartPointOfPan = [panGesture locationInView:self.view];
+            BPSWasOpenAtStartOfPan = [self isBottomOpen];
+            BPSWasHiddenAtStartOfPan = [self isBottomHidden];
+            
+            if (_bottomViewController != nil) {
+                [_bottomViewController beginAppearanceTransition:BPSWasHiddenAtStartOfPan animated:YES];
+            }
+            [self addShadowToView:_bottomContainerView];
+            [self setOpenWindowLevel];
+            
+            break;
+        }
+        case UIGestureRecognizerStateChanged: {
+            if (BPSLastState != UIGestureRecognizerStateBegan && BPSLastState != UIGestureRecognizerStateChanged) {
+                return;
+            }
+            CGPoint translation = [panGesture translationInView:panGesture.view];
+            _bottomContainerView.frame = [self applyBottomTranslation:translation toFrame:BPSFrameAtStartOfPan];
+            [self applyRightOpacity];
+            [self applyBottomContentViewScale];
+            NSLog(@"handleRightPanGesture --> Changed frame:%@", NSStringFromCGRect(_bottomContainerView.frame));
+            break;
+        }
+        case UIGestureRecognizerStateEnded: {
+            if (BPSLastState != UIGestureRecognizerStateChanged) {
+                return;
+            }
+            CGPoint velocity = [panGesture velocityInView:panGesture.view];
+            struct PanInfo panInfo = [self panBottomResultInfoForVelocity:velocity];
+            
+            if (panInfo.action == SlideActionOpen) {
+                if (BPSWasHiddenAtStartOfPan && _bottomViewController != nil) {
+                    [_bottomViewController beginAppearanceTransition:YES animated:YES];
+                }
+                [self openBottomWithVelocity:panInfo.velocity];
+            } else {
+                if (BPSWasHiddenAtStartOfPan && _bottomViewController != nil) {
+                    [_bottomViewController beginAppearanceTransition:NO animated:YES];
+                }
+                [self closeBottomWithVelocity:panInfo.velocity];
+                [self setCloseWindowLebel];
+            }
+            NSLog(@"handleBottomPanGesture --> Ended frame:%@", NSStringFromCGRect(_bottomContainerView.frame));
+            break;
+        }
+        default:
+            break;
+    }
+    BPSLastState = panGesture.state;
+}
+
 - (void)openLeftWithVelocity:(CGFloat)velocity {
     CGFloat xOrigin = _leftContainerView.frame.origin.x;
     
@@ -551,6 +730,36 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
         
         if (weakSelf.delegate != nil && [weakSelf.delegate respondsToSelector:@selector(leftDidOpen)]) {
             [weakSelf.delegate leftDidOpen];
+        }
+    }];
+}
+
+- (void)openBottomWithVelocity:(CGFloat)velocity {
+    CGFloat xOrigin = _bottomContainerView.frame.origin.x;
+    
+    CGFloat finalYOrigin = 120.f;
+    
+    CGRect frame = _bottomContainerView.frame;
+    frame.origin.y = finalYOrigin;
+    
+    NSTimeInterval duration = options.animationDuration;
+    if (velocity != 0.0) {
+        duration = fabs(xOrigin - CGRectGetWidth(self.view.bounds)) / velocity;
+        duration = fmax(0.1, fmin(1.0, duration));
+    }
+    
+    [self addShadowToView:_bottomContainerView];
+    __block typeof(self) weakSelf = self;
+    [UIView animateWithDuration:duration delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+        weakSelf.bottomContainerView.frame = frame;
+        weakSelf.opacityView.layer.opacity = options.contentViewOpacity;
+        weakSelf.mainContainerView.transform = CGAffineTransformMakeScale(options.contentViewScale, options.contentViewScale);
+    } completion:^(BOOL finished) {
+        [weakSelf disableContentInteraction];
+        [weakSelf.bottomViewController endAppearanceTransition];
+        
+        if (weakSelf.delegate != nil && [weakSelf.delegate respondsToSelector:@selector(bottomDidOpen)]) {
+            [weakSelf.delegate bottomDidOpen];
         }
     }];
 }
@@ -613,6 +822,34 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     }];
 }
 
+- (void)closeBottomWithVelocity:(CGFloat) velocity {
+    CGFloat xOrigin = _bottomContainerView.frame.origin.x;
+    CGFloat finalYOrigin = 3*CGRectGetHeight(self.view.bounds)/4.f;
+    
+    CGRect frame = _bottomContainerView.frame;
+    frame.origin.y = finalYOrigin;
+    
+    NSTimeInterval duration = options.animationDuration;
+    if (velocity != 0.0) {
+        duration = fabs(xOrigin - CGRectGetWidth(self.view.bounds)) / velocity;
+        duration = fmax(0.1, fmin(1.0, duration));
+    }
+    __block typeof(self) weakSelf = self;
+    [UIView animateWithDuration:duration delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+        weakSelf.bottomContainerView.frame = frame;
+        weakSelf.opacityView.layer.opacity = 0.0;
+        weakSelf.mainContainerView.transform = CGAffineTransformMakeScale(1.0, 1.0);
+    } completion:^(BOOL finished) {
+        [weakSelf removeShadow:weakSelf.bottomContainerView];
+        [weakSelf enableContentInteraction];
+        [weakSelf.bottomViewController endAppearanceTransition];
+        
+        if (weakSelf.delegate != nil && [weakSelf.delegate respondsToSelector:@selector(bottomDidClose)]) {
+            [weakSelf.delegate bottomDidClose];
+        }
+    }];
+}
+
 - (void)closeRightWithVelocity:(CGFloat) velocity {
     CGFloat xOrigin = _rightContainerView.frame.origin.x;
     CGFloat finalXOrigin = CGRectGetWidth(self.view.bounds);
@@ -669,6 +906,24 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     }
 }
 
+- (void)toggleBottom {
+    if ([self isBottomOpen]) {
+        [self closeBottom];
+        [self setCloseWindowLebel];
+        [self track:TrackActionBottomTapClose];
+    } else {
+        [self openBottom];
+    }
+}
+
+- (BOOL)isBottomOpen {
+    return _bottomViewController != nil && _bottomContainerView.frame.origin.y == 120.f;
+}
+
+- (BOOL)isBottomHidden {
+    return _bottomContainerView.frame.origin.y != 120.f;
+}
+
 - (BOOL)isRightOpen {
     return _rightViewController != nil && _rightContainerView.frame.origin.x == CGRectGetWidth(self.view.bounds) - _rightContainerView.frame.size.width;
 }
@@ -702,6 +957,13 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     _leftContainerView.frame = leftFrame;
 }
 
+- (void)changeBottomViewWidth:(CGFloat)width {
+    options.bottomBezelWidth = width;
+    CGRect rightFrame = self.view.bounds;
+    rightFrame.origin.y -= width;
+    _bottomContainerView.frame = rightFrame;
+}
+
 - (void)changeRightViewWidth:(CGFloat)width {
     options.rightBezelWidth = width;
     CGRect rightFrame = self.view.bounds;
@@ -731,8 +993,21 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     }
 }
 
+- (void)changeBottomViewController:(UIViewController *)newBottomController close:(BOOL) close {
+    [self removeViewController:_bottomViewController];
+    _bottomViewController = newBottomController;
+    [self setUpViewController:_bottomContainerView targetViewController:_bottomViewController];
+    if (close) {
+        [self closeBottom];
+    }
+}
+
 - (CGFloat)leftMinOrigin {
     return -options.leftViewWidth;
+}
+
+- (CGFloat)bottomMinOrigin {
+    return 3.f*CGRectGetHeight(self.view.bounds)/4.f;
 }
 
 - (CGFloat)rightMinOrigin {
@@ -752,6 +1027,22 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     } else if (velocity.x <= (-1.0 * thresholdVelocity)) {
         panInfo.action = SlideActionClose;
         panInfo.velocity = velocity.x;
+    }
+    return panInfo;
+}
+
+- (struct PanInfo)panBottomResultInfoForVelocity:(CGPoint)velocity {
+    CGFloat thresholdVelocity = -1000;
+    CGFloat pointOfNoReturn = floor(CGRectGetWidth(self.view.bounds)) - options.pointOfNoReturnWidth;
+    CGFloat bottomOrigin = _bottomContainerView.frame.origin.y;
+    struct PanInfo panInfo = {SlideActionClose, NO, 0.0};
+    panInfo.action = bottomOrigin >= pointOfNoReturn ? SlideActionClose : SlideActionOpen;
+    if (velocity.y <= thresholdVelocity) {
+        panInfo.action = SlideActionOpen;
+        panInfo.velocity = velocity.y;
+    } else if (velocity.y >= (-1.0 * thresholdVelocity)) {
+        panInfo.action = SlideActionClose;
+        panInfo.velocity = velocity.y;
     }
     return panInfo;
 }
@@ -787,6 +1078,21 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     return newFrame;
 }
 
+- (CGRect)applyBottomTranslation:(CGPoint)translation toFrame:(CGRect)frame {
+    CGFloat newOrigin = frame.origin.y;
+    newOrigin += translation.y;
+    CGFloat minOrigin = [self bottomMinOrigin];
+    CGFloat maxOrigin = 120.f;
+    CGRect newFrame = frame;
+    if (newOrigin > minOrigin) {
+        newOrigin = minOrigin;
+    } else if (newOrigin < maxOrigin) {
+        newOrigin = maxOrigin;
+    }
+    newFrame.origin.y = newOrigin;
+    return newFrame;
+}
+
 - (CGRect)applyRightTranslation:(CGPoint)translation toFrame:(CGRect)frame {
     CGFloat newOrigin = frame.origin.x;
     newOrigin += translation.x;
@@ -806,6 +1112,12 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     CGFloat width = _leftContainerView.frame.size.width;
     CGFloat currentPosition = _leftContainerView.frame.origin.x - [self leftMinOrigin];
     return currentPosition / width;
+}
+
+- (CGFloat)getOpenedBottomRatio {
+    CGFloat width = _bottomContainerView.frame.size.width;
+    CGFloat currentPosition = _bottomContainerView.frame.origin.y;
+    return - (currentPosition - CGRectGetHeight(self.view.bounds))/width;
 }
 
 - (CGFloat)getOpenedRightRatio {
@@ -835,6 +1147,12 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
 - (void)applyRightContentViewScale {
     CGFloat openedRightRatio = [self getOpenedRightRatio];
     CGFloat scale = 1.0 - ((1.0 - options.contentViewScale) * openedRightRatio);
+    _mainContainerView.transform = CGAffineTransformMakeScale(scale, scale);
+}
+
+- (void)applyBottomContentViewScale {
+    CGFloat openedBottomRatio = [self getOpenedBottomRatio];
+    CGFloat scale = 1.0 - ((1.0 - options.contentViewScale) * openedBottomRatio);
     _mainContainerView.transform = CGAffineTransformMakeScale(scale, scale);
 }
 
@@ -917,6 +1235,18 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     [self enableContentInteraction];
 }
 
+- (void)closeBottomNonAnimation {
+    [self setCloseWindowLebel];
+    CGFloat finalYOrigin = 3*CGRectGetHeight(self.view.bounds)/4;
+    CGRect frame = _bottomContainerView.frame;
+    frame.origin.y = finalYOrigin;
+    _bottomContainerView.frame = frame;
+    _opacityView.layer.opacity = 0.0;
+    _mainContainerView.transform = CGAffineTransformMakeScale(1.0, 1.0);
+    [self removeShadow:_bottomContainerView];
+    [self enableContentInteraction];
+}
+
 - (void)closeRightNonAnimation {
     [self setCloseWindowLebel];
     CGFloat finalXOrigin = CGRectGetWidth(self.view.bounds);
@@ -940,6 +1270,10 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
         return  [self isLeftOpen] && ![self isPointContainedWithinLeftRect:point];
     } else if (gestureRecognizer == _rightTapGesture) {
         return  [self isRightOpen] && ![self isPointContainedWithinRightRect:point];
+    } else if (gestureRecognizer == _bottomTapGesture) {
+        return  [self isBottomOpen] && ![self isPointContainedWithinBottomRect:point];
+    } else if (gestureRecognizer == _bottomPanGesture) {
+        return [self slideBottomViewForGestureRecognizer:gestureRecognizer withTouchPoint:point];
     }
     return YES;
 }
@@ -968,6 +1302,10 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     return [self isRightOpen] || (options.rightPanFromBezel && [self isRightPointContainedWithinBezelRect:point]);
 }
 
+- (BOOL)slideBottomViewForGestureRecognizer:(UIGestureRecognizer *)gesture withTouchPoint:(CGPoint)point {
+    return [self isBottomOpen] || (options.bottomPanFromBezel && [self isBottomPointContainedWithinBezelRect:point]);
+}
+
 - (BOOL)isRightPointContainedWithinBezelRect:(CGPoint)point {
     CGRect rightBezelRect = CGRectZero;
     CGRect tempRect = CGRectZero;
@@ -976,8 +1314,20 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     return CGRectContainsPoint(rightBezelRect, point);
 }
 
+- (BOOL)isBottomPointContainedWithinBezelRect:(CGPoint)point {
+    CGRect rightBezelRect = CGRectZero;
+    CGRect tempRect = CGRectZero;
+    CGFloat bezelWidth = 3.f*CGRectGetHeight(self.view.bounds)/4.f;
+    CGRectDivide(self.view.bounds, &tempRect, &rightBezelRect, bezelWidth, CGRectMinYEdge);
+    return CGRectContainsPoint(rightBezelRect, point);
+}
+
 - (BOOL)isPointContainedWithinRightRect:(CGPoint)point {
     return CGRectContainsPoint(_rightContainerView.frame, point);
+}
+
+- (BOOL)isPointContainedWithinBottomRect:(CGPoint)point {
+    return CGRectContainsPoint(_bottomContainerView.frame, point);
 }
 
 @end
@@ -1018,9 +1368,21 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
     }
 }
 
+- (void)toggleBottom {
+    if (self.slideMenuController != nil) {
+        [self.slideMenuController toggleBottom];
+    }
+}
+
 - (void)openLeft {
     if (self.slideMenuController != nil) {
         [self.slideMenuController openLeft];
+    }
+}
+
+- (void)openBottom {
+    if (self.slideMenuController != nil) {
+        [self.slideMenuController openBottom];
     }
 }
 
@@ -1039,6 +1401,12 @@ static UIGestureRecognizerState RPSLastState = UIGestureRecognizerStateEnded;
 - (void)closeRight {
     if (self.slideMenuController != nil) {
         [self.slideMenuController closeRight];
+    }
+}
+
+- (void)closeBottom {
+    if (self.slideMenuController != nil) {
+        [self.slideMenuController closeBottom];
     }
 }
 

@@ -16,7 +16,11 @@ typedef NS_ENUM(NSInteger, TrackAction) {
     TrackActionRightTapOpen,
     TrackActionRightTapClose,
     TrackActionRightFlickOpen,
-    TrackActionRightFlickClose
+    TrackActionRightFlickClose,
+    TrackActionBottomTapOpen,
+    TrackActionBottomTapClose,
+    TrackActionBottomFlickOpen,
+    TrackActionBottomFlickClose,
 };
 
 @protocol SlideMenuControllerDelegate <NSObject>
@@ -30,6 +34,10 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 - (void)rightDidOpen;
 - (void)rightWillClose;
 - (void)rightDidClose;
+- (void)bottomWillOpen;
+- (void)bottomDidOpen;
+- (void)bottomWillClose;
+- (void)bottomDidClose;
 
 @end
 
@@ -37,6 +45,8 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 
 @property (nonatomic, assign) CGFloat leftViewWidth;
 @property (nonatomic, assign) CGFloat leftBezelWidth;
+@property (nonatomic, assign) CGFloat bottomViewWidth;
+@property (nonatomic, assign) CGFloat bottomBezelWidth;
 @property (nonatomic, assign) CGFloat contentViewScale;
 @property (nonatomic, assign) CGFloat contentViewOpacity;
 @property (nonatomic, assign) CGFloat shadowOpacity;
@@ -47,6 +57,7 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 @property (nonatomic, assign) CGFloat rightViewWidth;
 @property (nonatomic, assign) CGFloat rightBezelWidth;
 @property (nonatomic, assign) BOOL rightPanFromBezel;
+@property (nonatomic, assign) BOOL bottomPanFromBezel;
 @property (nonatomic, assign) BOOL hideStatusBar;
 @property (nonatomic, assign) CGFloat pointOfNoReturnWidth;
 @property (nonatomic, assign) BOOL simultaneousGestureRecognizers;
@@ -64,13 +75,17 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 @property (nonatomic, retain) UIView *mainContainerView;
 @property (nonatomic, retain) UIView *leftContainerView;
 @property (nonatomic, retain) UIView *rightContainerView;
+@property (nonatomic, retain) UIView *bottomContainerView;
 @property (nonatomic, retain) UIPanGestureRecognizer *leftPanGesture;
 @property (nonatomic, retain) UITapGestureRecognizer *leftTapGesture;
 @property (nonatomic, retain) UIPanGestureRecognizer *rightPanGesture;
 @property (nonatomic, retain) UITapGestureRecognizer *rightTapGesture;
+@property (nonatomic, retain) UITapGestureRecognizer *bottomTapGesture;
+@property (nonatomic, retain) UIPanGestureRecognizer *bottomPanGesture;
 @property (nonatomic, retain) UIViewController *mainViewController;
 @property (nonatomic, retain) UIViewController *leftViewController;
 @property (nonatomic, retain) UIViewController *rightViewController;
+@property (nonatomic, retain) UIViewController *bottomViewController;
 
 
 - (instancetype)initWithMainViewController:(UIViewController *)tMainController leftMenuViewController:(UIViewController *)tLeftMenuController;
@@ -79,13 +94,21 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 
 - (instancetype)initWithMainViewController:(UIViewController *)tMainController leftMenuViewController:(UIViewController *)tLeftMenuController rightMenuViewController:(UIViewController *)tRightMenuController;
 
+- (instancetype)initWithMainViewController:(UIViewController *)tMainController bottomMenuViewController:(UIViewController *)tBottomMenuController;
+
+- (instancetype)initWithMainViewController:(UIViewController *)tMainController leftMenuViewController:(UIViewController *)tLeftMenuController rightMenuViewController:(UIViewController *)tRightMenuController bottomMenuViewController:(UIViewController *)tBottomMenuController;
+
 - (BOOL)isTagetViewController;
 
 - (void)addLeftGestures;
 
+- (void)addBottomGestures;
+
 - (void)addRightGestures;
 
 - (void)removeLeftGestures;
+
+- (void)removeBottomGestures;
 
 - (void)removeRightGestures;
 
@@ -93,15 +116,23 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 
 - (void)openLeftWithVelocity:(CGFloat) velocity;
 
+- (void)openBottomWithVelocity:(CGFloat) velocity;
+
 - (void)openRightWithVelocity:(CGFloat) velocity;
 
 - (void)closeLeftWithVelocity:(CGFloat) velocity;
+
+- (void)closeBottomWithVelocity:(CGFloat) velocity;
 
 - (void)closeRightWithVelocity:(CGFloat) velocity;
 
 - (BOOL)isLeftOpen;
 
 - (BOOL)isLeftHidden;
+
+- (BOOL)isBottomOpen;
+
+- (BOOL)isBottomHidden;
 
 - (BOOL)isRightOpen;
 
@@ -111,13 +142,19 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 
 - (void)changeLeftViewWidth:(CGFloat) width;
 
+- (void)changeBottomViewWidth:(CGFloat) width;
+
 - (void)changeRightViewWidth:(CGFloat) width;
 
 - (void)changeLeftViewController:(UIViewController *)newLeftController close:(BOOL) close;
 
+- (void)changeBottomViewController:(UIViewController *)newBottomController close:(BOOL) close;
+
 - (void)changeRightViewController:(UIViewController *)newRightController close:(BOOL) close;
 
 - (void)closeLeftNonAnimation;
+
+- (void)closeBottomNonAnimation;
 
 - (void)closeRightNonAnimation;
 
@@ -134,13 +171,19 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 
 - (void)toggleLeft;
 
+- (void)toggleBottom;
+
 - (void)toggleRight;
 
 - (void)openLeft;
 
+- (void)openBottom;
+
 - (void)openRight;
 
 - (void)closeLeft;
+
+- (void)closeBottom;
 
 - (void)closeRight;
 

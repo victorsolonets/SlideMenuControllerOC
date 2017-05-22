@@ -56,6 +56,18 @@
         case TrackActionRightFlickClose:
             NSLog(@"TrackAction: right flick close.");
             break;
+        case TrackActionBottomTapOpen:
+            NSLog(@"TrackAction: right tap open.");
+            break;
+        case TrackActionBottomTapClose:
+            NSLog(@"TrackAction: right tap close.");
+            break;
+        case TrackActionBottomFlickOpen:
+            NSLog(@"TrackAction: right flick open.");
+            break;
+        case TrackActionBottomFlickClose:
+            NSLog(@"TrackAction: right flick close.");
+            break;
         default:
             break;
     }
