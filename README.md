@@ -106,10 +106,12 @@ if (slideMenuController != nil) {
 // Open
 [self.slideMenuController openLeft];
 [self.slideMenuController openRight];
+[self.slideMenuController openBottom];
 
 // close
 [self.slideMenuController closeLeft];
 [self.slideMenuController closeRight];
+[self.slideMenuController closeBottom];
 ```
 
 ### You can monitor the menu state by `SlideMenuControllerDelegate`, something like this
@@ -123,6 +125,10 @@ if (slideMenuController != nil) {
 -(void)rightDidOpen;
 -(void)rightWillClose;
 -(void)rightDidClose;
+-(void)bottomWillOpen;
+-(void)bottomDidOpen;
+-(void)bottomWillClose;
+-(void)bottomDidClose;
 ```
 ___
 ## Requirements
