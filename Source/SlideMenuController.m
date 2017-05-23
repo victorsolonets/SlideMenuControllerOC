@@ -218,9 +218,6 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     options = option;
 }
 
-
-//- (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
-//    [super willRotateToInterfaceOrientation:toInterfaceOrientation duration:duration];
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
     _mainContainerView.transform = CGAffineTransformMakeScale(1.0, 1.0);
@@ -251,6 +248,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
     [self closeLeftNonAnimation];
     [self closeRightNonAnimation];
+    
     _leftContainerView.hidden = NO;
     _rightContainerView.hidden = NO;
     
@@ -640,16 +638,17 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
                 return;
             }
             
+            
             if (_delegate != nil) {
-//                if ([self isLeftHidden] && [self isRightHidden]) {
+                if ([self isLeftHidden]) {
                     if ([_delegate respondsToSelector:@selector(bottomWillOpen)]) {
                         [_delegate bottomWillOpen];
                     }
-//                } else {
-//                    if ([_delegate respondsToSelector:@selector(bottomWillClose)]) {
-//                        [_delegate bottomWillClose];
-//                    }
-//                }
+                } else {
+                    if ([_delegate respondsToSelector:@selector(bottomWillClose)]) {
+                        [_delegate bottomWillClose];
+                    }
+                }
             }
             
             BPSFrameAtStartOfPan = _bottomContainerView.frame;
@@ -671,9 +670,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
             }
             CGPoint translation = [panGesture translationInView:panGesture.view];
             _bottomContainerView.frame = [self applyBottomTranslation:translation toFrame:BPSFrameAtStartOfPan];
-            [self applyRightOpacity];
-            [self applyBottomContentViewScale];
-            NSLog(@"handleRightPanGesture --> Changed frame:%@", NSStringFromCGRect(_bottomContainerView.frame));
+            NSLog(@"handleBottomPanGesture --> Changed frame:%@", NSStringFromCGRect(_bottomContainerView.frame));
             break;
         }
         case UIGestureRecognizerStateEnded: {
@@ -693,7 +690,6 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
                     [_bottomViewController beginAppearanceTransition:NO animated:YES];
                 }
                 [self closeBottomWithVelocity:panInfo.velocity];
-                [self setCloseWindowLebel];
             }
             NSLog(@"handleBottomPanGesture --> Ended frame:%@", NSStringFromCGRect(_bottomContainerView.frame));
             break;
@@ -748,12 +744,9 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
         duration = fmax(0.1, fmin(1.0, duration));
     }
     
-    [self addShadowToView:_bottomContainerView];
     __block typeof(self) weakSelf = self;
     [UIView animateWithDuration:duration delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
         weakSelf.bottomContainerView.frame = frame;
-        weakSelf.opacityView.layer.opacity = options.contentViewOpacity;
-        weakSelf.mainContainerView.transform = CGAffineTransformMakeScale(options.contentViewScale, options.contentViewScale);
     } completion:^(BOOL finished) {
         [weakSelf disableContentInteraction];
         [weakSelf.bottomViewController endAppearanceTransition];
@@ -1135,6 +1128,12 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 - (void)applyRightOpacity {
     CGFloat openedRightRatio = [self getOpenedRightRatio];
     CGFloat opacity = options.contentViewOpacity * openedRightRatio;
+    _opacityView.layer.opacity = opacity;
+}
+
+- (void)applyBottomOpacity {
+    CGFloat openedBottomRatio = [self getOpenedBottomRatio];
+    CGFloat opacity = options.contentViewOpacity * openedBottomRatio;
     _opacityView.layer.opacity = opacity;
 }
 
