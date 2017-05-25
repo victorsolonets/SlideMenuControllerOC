@@ -45,7 +45,7 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 
 @property (nonatomic, assign) CGFloat leftViewWidth;
 @property (nonatomic, assign) CGFloat leftBezelWidth;
-@property (nonatomic, assign) CGFloat bottomViewWidth;
+@property (nonatomic, assign) CGFloat bottomViewY;
 @property (nonatomic, assign) CGFloat bottomBezelWidth;
 @property (nonatomic, assign) CGFloat contentViewScale;
 @property (nonatomic, assign) CGFloat contentViewOpacity;
@@ -142,7 +142,7 @@ typedef NS_ENUM(NSInteger, TrackAction) {
 
 - (void)changeLeftViewWidth:(CGFloat) width;
 
-- (void)changeBottomViewWidth:(CGFloat) width;
+- (void)changeBottomViewY:(CGFloat) originY;
 
 - (void)changeRightViewWidth:(CGFloat) width;
 

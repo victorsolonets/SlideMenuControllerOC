@@ -38,8 +38,8 @@ struct PanInfo {
         _rightBezelWidth = 20.0f;
         _rightPanFromBezel = YES;
         _bottomPanFromBezel = YES;
-        _bottomViewWidth = 270.f;
-        _bottomBezelWidth = 200.f;
+        _bottomViewY = CGRectGetHeight([UIScreen mainScreen].bounds);
+        _bottomBezelWidth = 20.f;
         _contentViewScale = 0.96f;
         _contentViewOpacity = 0.5f;
         _hideStatusBar = YES;
@@ -88,6 +88,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
         _mainContainerView = [UIView new];
         _leftContainerView = [UIView new];
         _rightContainerView = [UIView new];
+        _bottomContainerView = [UIView new];
         options = [[SlideMenuOption alloc] init];
     }
     return self;
@@ -198,7 +199,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     [self.view insertSubview:_rightContainerView atIndex:3];
     
     CGRect bottomFrame = self.view.bounds;
-    bottomFrame.origin.y = 3*CGRectGetHeight(self.view.bounds)/4;
+    bottomFrame.origin.y = [self bottomMinOrigin];
     bottomFrame.origin.x = 0.f;
     _bottomContainerView = [[UIView alloc] initWithFrame:bottomFrame];
     _bottomContainerView.backgroundColor = [UIColor clearColor];
@@ -448,7 +449,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     }
 }
 
-- (void)removeBttomGestures {
+- (void)removeBottomGestures {
     if (self.bottomPanGesture != nil) {
         [self.view removeGestureRecognizer:self.bottomPanGesture];
         self.bottomPanGesture = nil;
@@ -733,7 +734,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 - (void)openBottomWithVelocity:(CGFloat)velocity {
     CGFloat xOrigin = _bottomContainerView.frame.origin.x;
     
-    CGFloat finalYOrigin = 120.f;
+    CGFloat finalYOrigin = CGRectGetHeight(self.view.bounds)/4.f;
     
     CGRect frame = _bottomContainerView.frame;
     frame.origin.y = finalYOrigin;
@@ -817,10 +818,9 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 
 - (void)closeBottomWithVelocity:(CGFloat) velocity {
     CGFloat xOrigin = _bottomContainerView.frame.origin.x;
-    CGFloat finalYOrigin = 3*CGRectGetHeight(self.view.bounds)/4.f;
     
     CGRect frame = _bottomContainerView.frame;
-    frame.origin.y = finalYOrigin;
+    frame.origin.y = options.bottomViewY;
     
     NSTimeInterval duration = options.animationDuration;
     if (velocity != 0.0) {
@@ -910,11 +910,11 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 }
 
 - (BOOL)isBottomOpen {
-    return _bottomViewController != nil && _bottomContainerView.frame.origin.y == 120.f;
+    return _bottomViewController != nil && _bottomContainerView.frame.origin.y == CGRectGetHeight(self.view.bounds)/4.f;
 }
 
 - (BOOL)isBottomHidden {
-    return _bottomContainerView.frame.origin.y != 120.f;
+    return _bottomContainerView.frame.origin.y != CGRectGetHeight(self.view.bounds)/4.f;
 }
 
 - (BOOL)isRightOpen {
@@ -950,11 +950,11 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     _leftContainerView.frame = leftFrame;
 }
 
-- (void)changeBottomViewWidth:(CGFloat)width {
-    options.bottomBezelWidth = width;
-    CGRect rightFrame = self.view.bounds;
-    rightFrame.origin.y -= width;
-    _bottomContainerView.frame = rightFrame;
+- (void)changeBottomViewY:(CGFloat)originY {
+    options.bottomViewY = originY;
+    CGRect bottomFrame = self.view.bounds;
+    bottomFrame.origin.y = originY;
+    _bottomContainerView.frame = bottomFrame;
 }
 
 - (void)changeRightViewWidth:(CGFloat)width {
@@ -1000,7 +1000,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 }
 
 - (CGFloat)bottomMinOrigin {
-    return 3.f*CGRectGetHeight(self.view.bounds)/4.f;
+    return options.bottomViewY;
 }
 
 - (CGFloat)rightMinOrigin {
@@ -1075,7 +1075,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     CGFloat newOrigin = frame.origin.y;
     newOrigin += translation.y;
     CGFloat minOrigin = [self bottomMinOrigin];
-    CGFloat maxOrigin = 120.f;
+    CGFloat maxOrigin = CGRectGetHeight(self.view.bounds)/4.f;
     CGRect newFrame = frame;
     if (newOrigin > minOrigin) {
         newOrigin = minOrigin;
@@ -1236,7 +1236,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 
 - (void)closeBottomNonAnimation {
     [self setCloseWindowLebel];
-    CGFloat finalYOrigin = 3*CGRectGetHeight(self.view.bounds)/4;
+    CGFloat finalYOrigin = options.bottomViewY;
     CGRect frame = _bottomContainerView.frame;
     frame.origin.y = finalYOrigin;
     _bottomContainerView.frame = frame;
@@ -1316,7 +1316,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 - (BOOL)isBottomPointContainedWithinBezelRect:(CGPoint)point {
     CGRect rightBezelRect = CGRectZero;
     CGRect tempRect = CGRectZero;
-    CGFloat bezelWidth = 3.f*CGRectGetHeight(self.view.bounds)/4.f;
+    CGFloat bezelWidth = CGRectGetHeight(self.view.bounds) - options.bottomViewY;
     CGRectDivide(self.view.bounds, &tempRect, &rightBezelRect, bezelWidth, CGRectMinYEdge);
     return CGRectContainsPoint(rightBezelRect, point);
 }
