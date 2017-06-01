@@ -39,6 +39,7 @@ struct PanInfo {
         _rightPanFromBezel = YES;
         _bottomPanFromBezel = YES;
         _bottomViewY = CGRectGetHeight([UIScreen mainScreen].bounds);
+        _bottomViewEndY = 0.f;
         _bottomBezelWidth = 20.f;
         _contentViewScale = 0.96f;
         _contentViewOpacity = 0.5f;
@@ -734,7 +735,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 - (void)openBottomWithVelocity:(CGFloat)velocity {
     CGFloat xOrigin = _bottomContainerView.frame.origin.x;
     
-    CGFloat finalYOrigin = CGRectGetHeight(self.view.bounds)/4.f;
+    CGFloat finalYOrigin = options.bottomViewEndY;
     
     CGRect frame = _bottomContainerView.frame;
     frame.origin.y = finalYOrigin;
@@ -910,11 +911,11 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 }
 
 - (BOOL)isBottomOpen {
-    return _bottomViewController != nil && _bottomContainerView.frame.origin.y == CGRectGetHeight(self.view.bounds)/4.f;
+    return _bottomViewController != nil && _bottomContainerView.frame.origin.y == options.bottomViewEndY;
 }
 
 - (BOOL)isBottomHidden {
-    return _bottomContainerView.frame.origin.y != CGRectGetHeight(self.view.bounds)/4.f;
+    return _bottomContainerView.frame.origin.y != options.bottomViewEndY;
 }
 
 - (BOOL)isRightOpen {
@@ -955,6 +956,10 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     CGRect bottomFrame = self.view.bounds;
     bottomFrame.origin.y = originY;
     _bottomContainerView.frame = bottomFrame;
+}
+
+- (void)changeBottomViewEndY:(CGFloat) originY {
+    options.bottomViewEndY = originY;
 }
 
 - (void)changeRightViewWidth:(CGFloat)width {
@@ -1075,7 +1080,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     CGFloat newOrigin = frame.origin.y;
     newOrigin += translation.y;
     CGFloat minOrigin = [self bottomMinOrigin];
-    CGFloat maxOrigin = CGRectGetHeight(self.view.bounds)/4.f;
+    CGFloat maxOrigin = options.bottomViewEndY;
     CGRect newFrame = frame;
     if (newOrigin > minOrigin) {
         newOrigin = minOrigin;
