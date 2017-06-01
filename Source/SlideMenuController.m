@@ -204,7 +204,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
     bottomFrame.origin.x = 0.f;
     _bottomContainerView = [[UIView alloc] initWithFrame:bottomFrame];
     _bottomContainerView.backgroundColor = [UIColor clearColor];
-    _bottomContainerView.autoresizingMask = UIViewAutoresizingFlexibleWidth ;
+    _bottomContainerView.autoresizingMask = UIViewAutoresizingFlexibleHeight ;
     [self.view insertSubview:_bottomContainerView atIndex:4];
     
     [self addBottomGestures];
@@ -960,6 +960,9 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 
 - (void)changeBottomViewEndY:(CGFloat) originY {
     options.bottomViewEndY = originY;
+    CGRect bottomFrame = _bottomContainerView.frame;
+    bottomFrame.size.height -= options.bottomViewEndY;
+    _bottomContainerView.frame = bottomFrame;
 }
 
 - (void)changeRightViewWidth:(CGFloat)width {
@@ -1113,7 +1116,7 @@ static UIGestureRecognizerState BPSLastState = UIGestureRecognizerStateEnded;
 }
 
 - (CGFloat)getOpenedBottomRatio {
-    CGFloat width = _bottomContainerView.frame.size.width;
+    CGFloat width = _bottomContainerView.frame.size.height;
     CGFloat currentPosition = _bottomContainerView.frame.origin.y;
     return - (currentPosition - CGRectGetHeight(self.view.bounds))/width;
 }
